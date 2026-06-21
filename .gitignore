@@ -23,5 +23,7 @@ Thumbs.db
 .vscode/
 .idea/
 
-# Local scripts output
-scripts/config/env.js
+# Vercel
+.vercel/
+
+.vercel
