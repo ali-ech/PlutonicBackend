@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import {
   Category,
+  SubCategory,
   SubService,
   SubServiceCityPrice,
   Emirate,
@@ -33,14 +34,45 @@ router.delete('/categories/:id', async (req, res) => {
   res.json({ success: true });
 });
 
-router.get('/sub-services', async (req, res) => {
+router.get('/sub-categories', async (req, res) => {
   const categoryId = req.query.categoryId as string | undefined;
   const filter = categoryId ? { categoryId } : {};
-  const items = await SubService.find(filter).sort({ name: 1 }).lean();
+  const items = await SubCategory.find(filter).sort({ sortOrder: 1 }).lean();
   res.json(
     items.map((item) => ({
       ...item,
       categoryId: String(item.categoryId),
+    }))
+  );
+});
+
+router.post('/sub-categories', async (req, res) => {
+  const item = await SubCategory.create(req.body);
+  res.status(201).json(item);
+});
+
+router.patch('/sub-categories/:id', async (req, res) => {
+  const item = await SubCategory.findByIdAndUpdate(req.params.id, req.body, { new: true });
+  res.json(item);
+});
+
+router.delete('/sub-categories/:id', async (req, res) => {
+  await SubCategory.findByIdAndDelete(req.params.id);
+  res.json({ success: true });
+});
+
+router.get('/sub-services', async (req, res) => {
+  const categoryId = req.query.categoryId as string | undefined;
+  const subCategoryId = req.query.subCategoryId as string | undefined;
+  const filter: Record<string, string> = {};
+  if (categoryId) filter.categoryId = categoryId;
+  if (subCategoryId) filter.subCategoryId = subCategoryId;
+  const items = await SubService.find(filter).sort({ sortOrder: 1, name: 1 }).lean();
+  res.json(
+    items.map((item) => ({
+      ...item,
+      categoryId: String(item.categoryId),
+      subCategoryId: item.subCategoryId ? String(item.subCategoryId) : undefined,
     }))
   );
 });

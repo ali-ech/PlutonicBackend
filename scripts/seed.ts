@@ -68,17 +68,17 @@ async function seed() {
       sortOrder: 2,
     },
     {
-      name: 'Pets Control',
-      slug: 'pets-control',
-      description: 'Pest and pet-related control services for homes and offices.',
-      imageUrl: categoryImageForSlug('pets-control'),
+      name: 'Pest Control',
+      slug: 'pest-control',
+      description: 'Professional pest and rodent control for homes and offices.',
+      imageUrl: categoryImageForSlug('pest-control'),
       sortOrder: 3,
     },
   ]);
 
   const cleaning = categories[0];
   const birds = categories[1];
-  const pets = categories[2];
+  const pest = categories[2];
 
   const subServiceData = [
     { categoryId: cleaning._id, name: 'Deep Cleaning', slug: 'deep-cleaning', durationMinutes: 120, imageUrl: serviceImageForSlug('deep-cleaning'), youtubeUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ' },
@@ -87,8 +87,8 @@ async function seed() {
     { categoryId: cleaning._id, name: 'Move In / Out Cleaning', slug: 'move-in-out', durationMinutes: 180, imageUrl: serviceImageForSlug('move-in-out') },
     { categoryId: birds._id, name: 'Bird Netting', slug: 'bird-netting', durationMinutes: 120, imageUrl: serviceImageForSlug('bird-netting') },
     { categoryId: birds._id, name: 'Pigeon Control', slug: 'pigeon-control', durationMinutes: 90, imageUrl: serviceImageForSlug('pigeon-control') },
-    { categoryId: pets._id, name: 'General Pest Control', slug: 'pest-control', durationMinutes: 60, imageUrl: serviceImageForSlug('pest-control') },
-    { categoryId: pets._id, name: 'Rodent Control', slug: 'rodent-control', durationMinutes: 90, imageUrl: serviceImageForSlug('rodent-control') },
+    { categoryId: pest._id, name: 'General Pest Control', slug: 'pest-control', durationMinutes: 60, imageUrl: serviceImageForSlug('pest-control') },
+    { categoryId: pest._id, name: 'Rodent Control', slug: 'rodent-control', durationMinutes: 90, imageUrl: serviceImageForSlug('rodent-control') },
   ];
 
   const subServices = await SubService.insertMany(

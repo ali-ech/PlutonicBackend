@@ -8,6 +8,7 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "update-images": "tsx scripts/update-service-images.ts",
+    "sync-catalog": "tsx scripts/sync-service-catalog.ts",
     "seed": "tsx scripts/seed.ts"
   },
   "dependencies": {

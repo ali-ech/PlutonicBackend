@@ -3,7 +3,9 @@
 export const localCategoryImages: Record<string, string> = {
   cleaning: '/assets/categories/cleaning.png',
   'birds-control': '/assets/categories/birds-control.png',
-  'pets-control': '/assets/categories/pets-control.png',
+  'pest-control': '/assets/categories/pest-control.png',
+  'pets-control': '/assets/categories/pest-control.png',
+  disinfection: '/assets/categories/disinfection.png',
 };
 
 export const localServiceImages: Record<string, string> = {

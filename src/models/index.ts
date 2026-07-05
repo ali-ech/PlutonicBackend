@@ -50,6 +50,35 @@ const categorySchema = new Schema<ICategory>(
 
 export const Category = mongoose.model<ICategory>('Category', categorySchema);
 
+export interface ISubCategory extends Document {
+  categoryId: Types.ObjectId;
+  name: string;
+  slug: string;
+  description: string;
+  imageUrl: string;
+  tagline: string;
+  sortOrder: number;
+  active: boolean;
+}
+
+const subCategorySchema = new Schema<ISubCategory>(
+  {
+    categoryId: { type: Schema.Types.ObjectId, ref: 'Category', required: true },
+    name: { type: String, required: true },
+    slug: { type: String, required: true },
+    description: { type: String, default: '' },
+    imageUrl: { type: String, default: '' },
+    tagline: { type: String, default: '' },
+    sortOrder: { type: Number, default: 0 },
+    active: { type: Boolean, default: true },
+  },
+  { timestamps: true }
+);
+
+subCategorySchema.index({ categoryId: 1, slug: 1 }, { unique: true });
+
+export const SubCategory = mongoose.model<ISubCategory>('SubCategory', subCategorySchema);
+
 export interface IServiceStep {
   title: string;
   description: string;
@@ -58,11 +87,15 @@ export interface IServiceStep {
 
 export interface ISubService extends Document {
   categoryId: Types.ObjectId;
+  subCategoryId?: Types.ObjectId;
   name: string;
   slug: string;
   description: string;
   imageUrl: string;
   durationMinutes: number;
+  optionGroup: string;
+  optionGroupImage: string;
+  sortOrder: number;
   youtubeUrl: string;
   steps: IServiceStep[];
   active: boolean;
@@ -71,11 +104,15 @@ export interface ISubService extends Document {
 const subServiceSchema = new Schema<ISubService>(
   {
     categoryId: { type: Schema.Types.ObjectId, ref: 'Category', required: true },
+    subCategoryId: { type: Schema.Types.ObjectId, ref: 'SubCategory' },
     name: { type: String, required: true },
     slug: { type: String, required: true },
     description: { type: String, default: '' },
     imageUrl: { type: String, default: '' },
     durationMinutes: { type: Number, default: 60 },
+    optionGroup: { type: String, default: '' },
+    optionGroupImage: { type: String, default: '' },
+    sortOrder: { type: Number, default: 0 },
     youtubeUrl: { type: String, default: '' },
     steps: [
       {

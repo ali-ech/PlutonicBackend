@@ -13,14 +13,26 @@ import {
   generateBookingRef,
 } from '../services/slotEngine.js';
 import { createCheckoutSession } from '../services/stripe.js';
-import { notifyBookingConfirmed } from '../services/whatsapp.js';
+import {
+  notifyConfirmedBooking,
+  notifyPendingPaymentBooking,
+} from '../services/bookingNotifications.js';
 import { sendFcmToAdmins } from '../services/fcm.js';
 import { selectRescheduleOption } from '../services/rescheduleReply.js';
 import { getPublicUrl } from '../services/whatsapp.js';
 
 const router = Router();
 
+function validateCustomer(customer: { name?: string; phone?: string; address?: string }) {
+  if (!customer?.name?.trim()) return 'Full name is required';
+  if (!customer?.phone?.trim()) return 'Phone number is required';
+  if (!customer?.address?.trim()) return 'Address is required';
+  return null;
+}
+
 router.post('/', async (req, res) => {
+  let createdBookingId: string | null = null;
+
   try {
     const {
       cityId,
@@ -33,6 +45,17 @@ router.post('/', async (req, res) => {
 
     if (!cityId || !date || !slotStart || !subServiceIds?.length || !customer) {
       res.status(400).json({ error: 'Missing required fields' });
+      return;
+    }
+
+    const customerError = validateCustomer(customer);
+    if (customerError) {
+      res.status(400).json({ error: customerError });
+      return;
+    }
+
+    if (!['cash', 'bank_transfer', 'stripe'].includes(paymentMethod)) {
+      res.status(400).json({ error: 'Invalid payment method' });
       return;
     }
 
@@ -79,7 +102,7 @@ router.post('/', async (req, res) => {
     });
 
     if (!available.includes(slotStart)) {
-      res.status(400).json({ error: 'Slot no longer available' });
+      res.status(400).json({ error: 'Selected time slot is no longer available. Please pick another time.' });
       return;
     }
 
@@ -88,7 +111,12 @@ router.post('/', async (req, res) => {
     const ref = generateBookingRef();
     const booking = await Booking.create({
       ref,
-      customer,
+      customer: {
+        ...customer,
+        name: customer.name.trim(),
+        phone: customer.phone.trim(),
+        address: customer.address.trim(),
+      },
       cityId,
       date,
       slotStart,
@@ -101,67 +129,62 @@ router.post('/', async (req, res) => {
       paymentStatus: 'pending',
       status,
     });
+    createdBookingId = booking._id.toString();
 
     const city = await City.findById(cityId);
-    const serviceNames = lines.map((l) => l.name).join(', ');
 
-    let checkoutUrl: string | null = null;
     if (paymentMethod === 'stripe') {
-      const checkout = await createCheckoutSession({
-        bookingId: booking._id.toString(),
-        ref: booking.ref,
-        total: booking.total,
-        customerEmail: customer.email,
-      });
-      if (checkout) {
+      let checkoutUrl: string | null = null;
+      try {
+        const checkout = await createCheckoutSession({
+          bookingId: booking._id.toString(),
+          ref: booking.ref,
+          total: booking.total,
+          customerEmail: customer.email,
+        });
+        if (!checkout) {
+          await Booking.findByIdAndDelete(booking._id);
+          createdBookingId = null;
+          res.status(502).json({
+            error: 'Online payment is temporarily unavailable. Please choose cash or bank transfer.',
+          });
+          return;
+        }
         checkoutUrl = checkout.url;
         await Booking.findByIdAndUpdate(booking._id, { stripeSessionId: checkout.sessionId });
+      } catch (checkoutErr) {
+        console.error('Stripe checkout failed:', checkoutErr);
+        await Booking.findByIdAndDelete(booking._id);
+        createdBookingId = null;
+        res.status(500).json({ error: 'Could not start online payment. Please try again or choose another method.' });
+        return;
       }
-    }
 
-    if (paymentMethod !== 'stripe') {
-      const wa = await notifyBookingConfirmed({
-        phone: customer.phone,
-        ref: booking.ref,
-        date: booking.date,
-        slotStart: booking.slotStart,
-        slotEnd: booking.slotEnd,
-        services: serviceNames,
-        total: booking.total,
-        address: customer.address,
-        paymentMethod: paymentMethod === 'cash' ? 'Cash on arrival' : 'Bank transfer',
-        cityName: city?.name,
-      });
-
-      await sendFcmToAdmins({
-        title: 'New booking',
-        body: `${customer.name} — ${city?.name ?? ''} — AED ${total}`,
-        data: { bookingId: booking._id.toString(), type: 'new_booking' },
-      });
+      await notifyPendingPaymentBooking(booking);
 
       res.status(201).json({
         booking,
         cityName: city?.name,
-        whatsapp: wa,
-        receiptClickUrl: wa.receiptClickUrl,
+        checkoutUrl,
       });
       return;
     }
 
-    await sendFcmToAdmins({
-      title: 'New booking (awaiting payment)',
-      body: `${customer.name} — AED ${total}`,
-      data: { bookingId: booking._id.toString(), type: 'new_booking' },
-    });
+    const paymentLabel = paymentMethod === 'cash' ? 'Cash on arrival' : 'Bank transfer';
+    const wa = await notifyConfirmedBooking(booking, paymentLabel);
 
     res.status(201).json({
       booking,
       cityName: city?.name,
-      checkoutUrl,
+      whatsapp: wa,
+      receiptClickUrl: wa.receiptClickUrl,
     });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Failed to create booking' });
+    if (createdBookingId) {
+      await Booking.findByIdAndDelete(createdBookingId).catch(() => undefined);
+    }
+    res.status(500).json({ error: 'Failed to create booking. No confirmation was sent.' });
   }
 });
 

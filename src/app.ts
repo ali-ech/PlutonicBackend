@@ -6,11 +6,12 @@ import { constructStripeEvent } from './services/stripe.js';
 import { logFcmStartupStatus } from './services/fcm.js';
 import { logGooglePlacesStatus } from './config/env.js';
 import publicRoutes from './routes/public.js';
+import catalogRoutes from './routes/catalog.js';
 import bookingRoutes from './routes/bookings.js';
 import adminRoutes from './routes/admin.js';
 import whatsappWebhookRoutes from './routes/whatsappWebhook.js';
-import { Booking, City } from './models/index.js';
-import { notifyBookingConfirmed } from './services/whatsapp.js';
+import { Booking } from './models/index.js';
+import { notifyConfirmedBooking } from './services/bookingNotifications.js';
 import { sendFcmToAdmins } from './services/fcm.js';
 
 const app = express();
@@ -59,8 +60,8 @@ app.post(
       };
       const bookingId = session.metadata?.bookingId;
       if (bookingId) {
-        const booking = await Booking.findByIdAndUpdate(
-          bookingId,
+        const booking = await Booking.findOneAndUpdate(
+          { _id: bookingId, status: 'pending_payment' },
           {
             paymentStatus: 'paid',
             status: 'confirmed',
@@ -68,22 +69,9 @@ app.post(
           },
           { new: true }
         );
-        if (booking) {
-          const city = await City.findById(booking.cityId);
-          const serviceNames = booking.subServices.map((s) => s.name).join(', ');
 
-          await notifyBookingConfirmed({
-            phone: booking.customer.phone,
-            ref: booking.ref,
-            date: booking.date,
-            slotStart: booking.slotStart,
-            slotEnd: booking.slotEnd,
-            services: serviceNames,
-            total: booking.total,
-            address: booking.customer.address,
-            paymentMethod: 'Paid online (card)',
-            cityName: city?.name,
-          });
+        if (booking) {
+          await notifyConfirmedBooking(booking, 'Paid online (card)');
           await sendFcmToAdmins({
             title: 'Payment received',
             body: `${booking.ref} — AED ${booking.total}`,
@@ -116,6 +104,7 @@ app.get('/api/health', (_req, res) => {
 });
 
 app.use('/api/whatsapp', whatsappWebhookRoutes);
+app.use('/api/catalog', catalogRoutes);
 app.use('/api', publicRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/admin', adminRoutes);
