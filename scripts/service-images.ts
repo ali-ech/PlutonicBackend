@@ -1,23 +1,8 @@
-/** HD image paths for categories and sub-services (served from client/public) */
+/** Optional local image overrides. Keep empty unless files exist in client/public/assets. */
 
-export const localCategoryImages: Record<string, string> = {
-  cleaning: '/assets/categories/cleaning.png',
-  'birds-control': '/assets/categories/birds-control.png',
-  'pest-control': '/assets/categories/pest-control.png',
-  'pets-control': '/assets/categories/pest-control.png',
-  disinfection: '/assets/categories/disinfection.png',
-};
+export const localCategoryImages: Record<string, string> = {};
 
-export const localServiceImages: Record<string, string> = {
-  'deep-cleaning': '/assets/services/deep-cleaning.png',
-  'sofa-cleaning': '/assets/services/sofa-cleaning.png',
-  'carpet-cleaning': '/assets/services/carpet-cleaning.png',
-  'move-in-out': '/assets/services/move-in-out.png',
-  'bird-netting': '/assets/services/bird-netting.png',
-  'pigeon-control': '/assets/services/pigeon-control.png',
-  'pest-control': '/assets/services/pest-control.png',
-  'rodent-control': '/assets/services/rodent-control.png',
-};
+export const localServiceImages: Record<string, string> = {};
 
 export function serviceImageForSlug(slug: string): string {
   return localServiceImages[slug] || '';

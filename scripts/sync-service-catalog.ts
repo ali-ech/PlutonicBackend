@@ -37,8 +37,17 @@ async function main() {
     } else {
       cat.name = catDef.name;
       cat.active = true;
+      cat.sortOrder = categorySlugs.indexOf(slug) + 1;
       await cat.save();
     }
+  }
+
+  const staleCategories = await Category.updateMany(
+    { slug: { $nin: categorySlugs }, active: true },
+    { $set: { active: false } }
+  );
+  if (staleCategories.modifiedCount > 0) {
+    console.log(`Deactivated ${staleCategories.modifiedCount} obsolete categor${staleCategories.modifiedCount === 1 ? 'y' : 'ies'}.`);
   }
 
   const subCatIdByKey = new Map<string, mongoose.Types.ObjectId>();
