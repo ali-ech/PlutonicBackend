@@ -7,6 +7,7 @@ export const localCategoryImages: Record<string, string> = {
   'birds-control': CATEGORY_IMAGES['birds-control'],
   'pest-control': CATEGORY_IMAGES['pest-control'],
   painting: CATEGORY_IMAGES.painting,
+  'water-tank-cleaning': CATEGORY_IMAGES['water-tank-cleaning'],
 };
 
 export const localServiceImages: Record<string, string> = {
@@ -24,6 +25,7 @@ export const localServiceImages: Record<string, string> = {
   'off-white-apartment-studio': CATALOG_IMAGES.paintingWhite,
   'color-painting-apartment-studio': CATALOG_IMAGES.paintingColor,
   'water-damage-bedroom': CATALOG_IMAGES.waterDamage,
+  'water-tank-underground': CATALOG_IMAGES.waterTank,
 };
 
 export function serviceImageForSlug(slug: string): string {
