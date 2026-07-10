@@ -7,7 +7,6 @@ export const localCategoryImages: Record<string, string> = {
   'birds-control': CATEGORY_IMAGES['birds-control'],
   'pest-control': CATEGORY_IMAGES['pest-control'],
   painting: CATEGORY_IMAGES.painting,
-  'water-damage': CATEGORY_IMAGES['water-damage'],
 };
 
 export const localServiceImages: Record<string, string> = {
