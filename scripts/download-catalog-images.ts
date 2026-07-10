@@ -10,29 +10,109 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '../..');
 const PUBLIC = path.join(ROOT, 'client/public/assets');
 const JL = 'https://deax38zvkau9d.cloudfront.net/prod/assets/images/uploads/services';
+const JL_STATIC = 'https://deax38zvkau9d.cloudfront.net/prod/assets/static/svgs';
 
 type AssetDef = { file: string; url: string };
 
 const DOWNLOADS: AssetDef[] = [
+  // JustLife checkout chip icons (static CDN)
+  { file: 'services/pest-general.svg', url: `${JL_STATIC}/pest-control.svg` },
+  { file: 'services/disinfection.svg', url: `${JL_STATIC}/disinfection.svg` },
   { file: 'categories/furniture-cleaning.webp', url: `${JL}/1670930482furniture-cleaning.webp?f=webp&w=900` },
   { file: 'categories/home-cleaning.webp', url: `${JL}/1689846492house-cleaning-dubai.webp?f=webp&w=900` },
   { file: 'categories/pest-control.webp', url: `${JL}/1667551131pest-control-services.webp?f=webp&w=900` },
+  // birds-control.webp — keep local generated asset in categories/ (not downloaded here)
+  // categories/painting.webp, services/painting-color.webp, painting-white.webp, water-damage-repair.webp — local generated
   { file: 'services/sofa.webp', url: `${JL}/1720778159sofa-cleaning.webp?f=webp&w=700` },
   { file: 'services/carpet.webp', url: `${JL}/1552580155shutterstock_68494642.jpg?f=webp&w=700` },
   { file: 'services/mattress.webp', url: `${JL}/1552578988shutterstock_790083364.jpg?f=webp&w=700` },
   { file: 'services/curtain.webp', url: `${JL}/1552580284shutterstock_634425491.jpg?f=webp&w=700` },
   { file: 'services/deep-cleaning.webp', url: `${JL}/1552580501shutterstock_793058929.jpg?f=webp&w=700` },
   // Unsplash — downloaded locally (Justlife has no dedicated pages for these)
-  { file: 'services/l-shaped-sofa.webp', url: 'https://images.unsplash.com/photo-1493663284031-b7e3a525b3b8?w=700&q=90&auto=format&fit=crop' },
+  { file: 'services/l-shaped-sofa.webp', url: 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=700&q=90&auto=format&fit=crop' },
   { file: 'services/recliner.webp', url: 'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=700&q=90&auto=format&fit=crop' },
   { file: 'services/combos.webp', url: 'https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=700&q=90&auto=format&fit=crop' },
-  { file: 'services/bundles.webp', url: 'https://images.unsplash.com/photo-1615874957879-5a98b7c7cd8d?w=700&q=90&auto=format&fit=crop' },
+  { file: 'services/bundles.webp', url: 'https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=700&q=90&auto=format&fit=crop' },
   { file: 'services/outdoor.webp', url: 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=700&q=90&auto=format&fit=crop' },
   { file: 'services/move-in-out.webp', url: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=700&q=90&auto=format&fit=crop' },
   { file: 'groups/apartment.webp', url: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=640&q=90&auto=format&fit=crop' },
   { file: 'groups/villa.webp', url: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=640&q=90&auto=format&fit=crop' },
   { file: 'groups/kitchen.webp', url: 'https://images.unsplash.com/photo-1556911220-bff31c812dba?w=640&q=90&auto=format&fit=crop' },
   { file: 'groups/bathroom.webp', url: 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?w=640&q=90&auto=format&fit=crop' },
+];
+
+/** JustLife flex checkout chip icon — compact blue glyph, no labels */
+function chipIconSvg(inner: string, viewBox = '0 0 58 50') {
+  return `<svg width="58" height="50" viewBox="${viewBox}" fill="none" xmlns="http://www.w3.org/2000/svg">${inner}</svg>`;
+}
+
+const PEST_CHIP_ICONS: { file: string; svg: string }[] = [
+  {
+    file: 'services/cockroaches.svg',
+    svg: chipIconSvg(`
+      <ellipse cx="29" cy="28" rx="16" ry="10" fill="#00C3FF"/>
+      <circle cx="22" cy="24" r="2.5" fill="#00C3FF"/>
+      <circle cx="36" cy="24" r="2.5" fill="#00C3FF"/>
+      <path d="M18 28h-6M40 28h6M22 18l-4-6M36 18l4-6M24 36l-3 6M34 36l3 6" stroke="#00C3FF" stroke-width="2.2" stroke-linecap="round"/>
+    `),
+  },
+  {
+    file: 'services/mosquitoes.svg',
+    svg: chipIconSvg(`
+      <path d="M29 8v16" stroke="#00C3FF" stroke-width="2.2" stroke-linecap="round"/>
+      <path d="M17 14c6-5 18-5 24 0M17 22c6 5 18 5 24 0" stroke="#00C3FF" stroke-width="2.2" stroke-linecap="round"/>
+      <ellipse cx="29" cy="30" rx="5" ry="3.5" fill="#00C3FF"/>
+      <path d="M24 33c-2 8 2 12 5 15 3-3 7-7 5-15" fill="#00C3FF"/>
+    `),
+  },
+  {
+    file: 'services/bed-bugs.svg',
+    svg: chipIconSvg(`
+      <rect x="12" y="24" width="34" height="12" rx="3" fill="#00C3FF"/>
+      <path d="M12 30h34" stroke="#fff" stroke-width="1.5" opacity=".35"/>
+      <ellipse cx="29" cy="18" rx="12" ry="6" fill="#00C3FF"/>
+      <path d="M22 18h14" stroke="#fff" stroke-width="1.5" opacity=".35"/>
+    `),
+  },
+  {
+    file: 'services/ants.svg',
+    svg: chipIconSvg(`
+      <circle cx="29" cy="14" r="4" fill="#00C3FF"/>
+      <ellipse cx="29" cy="24" rx="5" ry="6" fill="#00C3FF"/>
+      <ellipse cx="29" cy="34" rx="4" ry="5" fill="#00C3FF"/>
+      <path d="M22 22l-7 4M36 22l7 4M24 32l-6 5M34 32l6 5" stroke="#00C3FF" stroke-width="2.2" stroke-linecap="round"/>
+    `),
+  },
+  {
+    file: 'services/rodents.svg',
+    svg: chipIconSvg(`
+      <ellipse cx="24" cy="28" rx="14" ry="9" fill="#00C3FF"/>
+      <circle cx="38" cy="22" r="8" fill="#00C3FF"/>
+      <circle cx="41" cy="20" r="1.8" fill="#fff"/>
+      <path d="M46 22c4-1 7 2 9 6" stroke="#00C3FF" stroke-width="2.2" stroke-linecap="round"/>
+      <path d="M10 28c-5 2-8 7-9 12M20 36l-3 7M28 36l3 7" stroke="#00C3FF" stroke-width="2.2" stroke-linecap="round"/>
+    `),
+  },
+  {
+    file: 'services/apartment-disinfection.svg',
+    svg: chipIconSvg(`
+      <rect x="16" y="12" width="26" height="30" rx="2" fill="#00C3FF"/>
+      <rect x="20" y="18" width="6" height="6" rx=".5" fill="#fff" opacity=".45"/>
+      <rect x="32" y="18" width="6" height="6" rx=".5" fill="#fff" opacity=".45"/>
+      <rect x="20" y="28" width="6" height="6" rx=".5" fill="#fff" opacity=".45"/>
+      <rect x="32" y="28" width="6" height="6" rx=".5" fill="#fff" opacity=".45"/>
+      <path d="M22 8h14v4H22z" fill="#00C3FF"/>
+    `),
+  },
+  {
+    file: 'services/villa-disinfection.svg',
+    svg: chipIconSvg(`
+      <path d="M29 10L10 24v18h38V24L29 10z" fill="#00C3FF"/>
+      <rect x="24" y="28" width="10" height="14" rx="1" fill="#fff" opacity=".45"/>
+      <rect x="16" y="26" width="7" height="7" rx=".5" fill="#fff" opacity=".35"/>
+      <rect x="35" y="26" width="7" height="7" rx=".5" fill="#fff" opacity=".35"/>
+    `),
+  },
 ];
 
 function illustrationSvg(title: string, subtitle: string, primary: string, secondary: string, icon: string) {
@@ -93,41 +173,7 @@ const ILLUSTRATIONS: { file: string; svg: string }[] = [
     svg: illustrationSvg('Steel Mesh', 'Strong barrier install', '#475569', '#cbd5e1',
       '<rect x="-80" y="-20" width="160" height="120" rx="8"/><path d="M-80-20v120M-40-20v120M0-20v120M40-20v120M80-20v120"/><path d="M-80 20h160M-80 60h160M-80 100h160"/>'),
   },
-  {
-    file: 'services/pest-general.svg',
-    svg: illustrationSvg('Pest Control', 'Licensed home treatment', '#0f766e', '#facc15',
-      '<path d="M-30-20c-20 30-20 70 0 100 20-30 20-70 0-100z"/><path d="M-50 0h-30M50 0h30M-40 40h-20M40 40h20"/><circle cx="0" cy="30" r="12"/>'),
-  },
-  {
-    file: 'services/cockroaches.svg',
-    svg: illustrationSvg('Cockroach Control', 'Kitchen & bathroom treatment', '#92400e', '#fbbf24',
-      '<ellipse cx="0" cy="20" rx="70" ry="40"/><path d="M-70 20h-25M70 20h25"/><path d="M-40 0l-20-25M40 0l20-25M-20 50l-15 25M20 50l15 25"/><circle cx="-15" cy="15" r="5" fill="#92400e"/><circle cx="15" cy="15" r="5" fill="#92400e"/>'),
-  },
-  {
-    file: 'services/mosquitoes.svg',
-    svg: illustrationSvg('Mosquito Control', 'Indoor & outdoor treatment', '#0e7490', '#67e8f9',
-      '<path d="M0-50v70"/><path d="M-40-30c20-20 60-20 80 0M-40-10c20 20 60 20 80 0"/><ellipse cx="0" cy="30" rx="12" ry="8"/><path d="M-12 38c-8 20 8 35 12 50 4-15 20-30 12-50"/>'),
-  },
-  {
-    file: 'services/bed-bugs.svg',
-    svg: illustrationSvg('Bed Bug Treatment', 'Mattress & room service', '#7f1d1d', '#fca5a5',
-      '<rect x="-80" y="10" width="160" height="50" rx="8"/><path d="M-80 35h160"/><ellipse cx="0" cy="-10" rx="50" ry="25"/><path d="M-30-10h60"/>'),
-  },
-  {
-    file: 'services/ants.svg',
-    svg: illustrationSvg('Ant Control', 'Colony treatment', '#854d0e', '#fde68a',
-      '<circle cx="0" cy="-25" r="14"/><ellipse cx="0" cy="10" rx="18" ry="22"/><ellipse cx="0" cy="45" rx="14" ry="18"/><path d="M-18 5l-25 10M18 5l25 10M-12 40l-20 15M12 40l20 15"/>'),
-  },
-  {
-    file: 'services/rodents.svg',
-    svg: illustrationSvg('Rodent Control', 'Inspection & proofing', '#334155', '#94a3b8',
-      '<ellipse cx="0" cy="15" rx="55" ry="35"/><circle cx="35" cy="-5" r="22"/><circle cx="45" cy="-12" r="4" fill="#334155"/><path d="M55-5c15-5 25 5 30 15"/><path d="M-55 15c-20 5-30 20-35 35"/><path d="M-10 45l-8 20M10 45l8 20"/>'),
-  },
-  {
-    file: 'services/disinfection.svg',
-    svg: illustrationSvg('Disinfection', 'Fogging & sanitizing', '#0891b2', '#a7f3d0',
-      '<path d="M-20-40c0-20 40-20 40 0v20H-20z"/><rect x="-25" y="-20" width="50" height="70" rx="8"/><path d="M-50 10c-20 10-30 30-20 50 10-25 35-40 70-40s60 15 70 40c10-20 0-40-20-50"/>'),
-  },
+
 ];
 
 async function downloadFile(relPath: string, url: string) {
@@ -156,12 +202,13 @@ async function main() {
     }
   }
 
-  for (const { file, svg } of ILLUSTRATIONS) {
+  for (const { file, svg } of [...PEST_CHIP_ICONS, ...ILLUSTRATIONS]) {
     const dest = path.join(PUBLIC, file);
+    if (fs.existsSync(dest) && DOWNLOADS.some((d) => d.file === file)) continue;
     fs.mkdirSync(path.dirname(dest), { recursive: true });
     fs.writeFileSync(dest, svg, 'utf8');
     const publicPath = `/assets/${file.replace(/\\/g, '/')}`;
-    const key = file.replace(/\.svg$/i, '').replace(/\//g, '-').replace(/^categories-/, 'category-').replace(/^services-/, '');
+    const key = file.replace(/\.(webp|jpg|jpeg|png|svg)$/i, '').replace(/\//g, '-').replace(/^categories-/, 'category-').replace(/^services-/, '').replace(/^groups-/, 'group-');
     manifest[key] = publicPath;
     console.log('SVG', file);
   }

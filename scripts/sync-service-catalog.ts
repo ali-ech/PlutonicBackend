@@ -36,6 +36,7 @@ async function main() {
       console.log(`Created category: ${cat.name}`);
     } else {
       cat.name = catDef.name;
+      cat.imageUrl = categoryImageForSlug(slug) || cat.imageUrl;
       cat.active = true;
       cat.sortOrder = categorySlugs.indexOf(slug) + 1;
       await cat.save();
@@ -124,10 +125,11 @@ async function main() {
       });
       created++;
 
+      const seedPrice = item.priceAed ?? 79 + Math.floor(Math.random() * 320);
       for (const city of cities) {
         await SubServiceCityPrice.findOneAndUpdate(
           { subServiceId: sub._id, cityId: city._id },
-          { priceAed: 79 + Math.floor(Math.random() * 320) },
+          { priceAed: seedPrice },
           { upsert: true }
         );
       }
@@ -142,6 +144,16 @@ async function main() {
       sub.active = true;
       await sub.save();
       updated++;
+
+      if (item.priceAed != null) {
+        for (const city of cities) {
+          await SubServiceCityPrice.findOneAndUpdate(
+            { subServiceId: sub._id, cityId: city._id },
+            { priceAed: item.priceAed },
+            { upsert: true }
+          );
+        }
+      }
     }
   }
 
