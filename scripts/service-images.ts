@@ -8,6 +8,9 @@ export const localCategoryImages: Record<string, string> = {
   'pest-control': CATEGORY_IMAGES['pest-control'],
   painting: CATEGORY_IMAGES.painting,
   'water-tank-cleaning': CATEGORY_IMAGES['water-tank-cleaning'],
+  'ac-cleaning-repair': CATEGORY_IMAGES['ac-cleaning-repair'],
+  'handyman-maintenance': CATEGORY_IMAGES['handyman-maintenance'],
+  'hourly-home-cleaning': CATEGORY_IMAGES['hourly-home-cleaning'],
 };
 
 export const localServiceImages: Record<string, string> = {
@@ -26,6 +29,18 @@ export const localServiceImages: Record<string, string> = {
   'color-painting-apartment-studio': CATALOG_IMAGES.paintingColor,
   'water-damage-bedroom': CATALOG_IMAGES.waterDamage,
   'water-tank-underground': CATALOG_IMAGES.waterTank,
+  'ac-bestseller-basic-1': CATALOG_IMAGES.acCleaning,
+  'ac-deep-1': CATALOG_IMAGES.acCleaning,
+  'ac-full-1': CATALOG_IMAGES.acCleaning,
+  'ac-hourly-technician': CATALOG_IMAGES.acCleaning,
+  'duct-central-basic-1': CATALOG_IMAGES.acCleaning,
+  'ac-bundle-deep-filter-duct': CATALOG_IMAGES.combo,
+  'ac-split-cleaning': CATALOG_IMAGES.acCleaning,
+  'ac-coil-1': CATALOG_IMAGES.acCleaning,
+  'hm-hourly-handyman': CATALOG_IMAGES.handyman,
+  'hm-handyman-90min': CATALOG_IMAGES.handyman,
+  'hm-electrician-90min': CATALOG_IMAGES.electrician,
+  'hm-plumber-90min': CATALOG_IMAGES.plumber,
 };
 
 export function serviceImageForSlug(slug: string): string {

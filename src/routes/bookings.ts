@@ -20,6 +20,13 @@ import {
 import { sendFcmToAdmins } from '../services/fcm.js';
 import { selectRescheduleOption } from '../services/rescheduleReply.js';
 import { getPublicUrl } from '../services/whatsapp.js';
+import {
+  HOME_CLEANING_MATERIALS_FEE_AED,
+  HOME_CLEANING_MATERIALS_SLUG,
+  HOME_CLEANING_SERVICE_SLUG,
+  computeHomeCleaningTotal,
+  formatHomeCleaningLabel,
+} from '../lib/homeCleaningPricing.js';
 
 const router = Router();
 
@@ -39,11 +46,32 @@ router.post('/', async (req, res) => {
       date,
       slotStart,
       subServiceIds,
+      serviceItems,
       customer,
       paymentMethod,
     } = req.body;
 
-    if (!cityId || !date || !slotStart || !subServiceIds?.length || !customer) {
+    const MAX_QTY = 12;
+    type QtyItem = { subServiceId: string; quantity: number; professionals?: number };
+    let items: QtyItem[] = [];
+
+    if (Array.isArray(serviceItems) && serviceItems.length > 0) {
+      items = serviceItems
+        .map((it: { subServiceId?: string; quantity?: number; professionals?: number }) => ({
+          subServiceId: String(it.subServiceId || ''),
+          quantity: Math.max(1, Math.min(MAX_QTY, Math.floor(Number(it.quantity) || 1))),
+          professionals: Math.max(1, Math.min(4, Math.floor(Number(it.professionals) || 1))),
+        }))
+        .filter((it: QtyItem) => it.subServiceId);
+    } else if (Array.isArray(subServiceIds) && subServiceIds.length > 0) {
+      items = subServiceIds.map((id: string) => ({
+        subServiceId: String(id),
+        quantity: 1,
+        professionals: 1,
+      }));
+    }
+
+    if (!cityId || !date || !slotStart || !items.length || !customer) {
       res.status(400).json({ error: 'Missing required fields' });
       return;
     }
@@ -60,24 +88,93 @@ router.post('/', async (req, res) => {
     }
 
     const settings = await Settings.findOne();
-    const subServices = await SubService.find({ _id: { $in: subServiceIds }, active: true });
-    if (subServices.length !== subServiceIds.length) {
+    const uniqueIds = [...new Set(items.map((i) => i.subServiceId))];
+    const subServices = await SubService.find({ _id: { $in: uniqueIds }, active: true });
+    if (subServices.length !== uniqueIds.length) {
       res.status(400).json({ error: 'Invalid sub-services' });
       return;
     }
 
+    const byId = new Map(subServices.map((s) => [s._id.toString(), s]));
+
+    for (const item of items) {
+      const s = byId.get(item.subServiceId);
+      if (!s) continue;
+      const isHomeCleaning =
+        s.slug === HOME_CLEANING_SERVICE_SLUG || s.slug === HOME_CLEANING_MATERIALS_SLUG;
+      const allowsQty =
+        isHomeCleaning ||
+        Boolean(s.pricedByHour) ||
+        Boolean(s.allowsQuantity) ||
+        /^hourly\s/i.test(s.name) ||
+        /hourly/i.test(s.slug || '') ||
+        [
+          'hm-furniture-installation',
+          'hm-tv-entertainment-install',
+          'hm-curtains-blinds-install',
+          'hm-flyscreen-install',
+          'hm-door-lock-install-repair',
+          'hm-chandelier-install',
+          'hm-switches-lights-install',
+        ].includes(s.slug || '');
+      if (item.quantity > 1 && !allowsQty) {
+        res.status(400).json({ error: `Quantity not allowed for ${s.name}` });
+        return;
+      }
+    }
+
     const prices = await SubServiceCityPrice.find({
       cityId,
-      subServiceId: { $in: subServiceIds },
+      subServiceId: { $in: uniqueIds },
     });
     const priceMap = new Map(prices.map((p) => [p.subServiceId.toString(), p.priceAed]));
 
-    const lines = subServices.map((s) => ({
-      subServiceId: s._id,
-      name: s.name,
-      price: priceMap.get(s._id.toString()) ?? 0,
-      durationMinutes: s.durationMinutes,
-    }));
+    const lines = items.map((item) => {
+      const s = byId.get(item.subServiceId)!;
+      const qty = item.quantity;
+      const pros = item.professionals || 1;
+
+      if (s.slug === HOME_CLEANING_SERVICE_SLUG) {
+        const { laborAed, durationMinutes } = computeHomeCleaningTotal({
+          hours: qty,
+          professionals: pros,
+          materials: false,
+        });
+        return {
+          subServiceId: s._id,
+          name: formatHomeCleaningLabel(qty, pros),
+          price: laborAed,
+          durationMinutes,
+        };
+      }
+
+      if (s.slug === HOME_CLEANING_MATERIALS_SLUG) {
+        return {
+          subServiceId: s._id,
+          name: 'Cleaning materials',
+          price: HOME_CLEANING_MATERIALS_FEE_AED,
+          durationMinutes: 0,
+        };
+      }
+
+      const unitPrice = priceMap.get(s._id.toString()) ?? 0;
+      const isHourly =
+        Boolean(s.pricedByHour) ||
+        /^hourly\s/i.test(s.name) ||
+        /hourly/i.test(s.slug || '');
+      const name =
+        qty > 1
+          ? isHourly
+            ? `${s.name} × ${qty} hr`
+            : `${s.name} × ${qty}`
+          : s.name;
+      return {
+        subServiceId: s._id,
+        name,
+        price: unitPrice * qty,
+        durationMinutes: s.durationMinutes * qty,
+      };
+    });
 
     const subtotal = lines.reduce((sum, l) => sum + l.price, 0);
     const totalDuration = lines.reduce((sum, l) => sum + l.durationMinutes, 0);

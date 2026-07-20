@@ -29,8 +29,10 @@ export const City = mongoose.model<ICity>('City', citySchema);
 
 export interface ICategory extends Document {
   name: string;
+  nameAr?: string;
   slug: string;
   description: string;
+  descriptionAr?: string;
   imageUrl: string;
   sortOrder: number;
   active: boolean;
@@ -39,8 +41,10 @@ export interface ICategory extends Document {
 const categorySchema = new Schema<ICategory>(
   {
     name: { type: String, required: true },
+    nameAr: { type: String, default: '' },
     slug: { type: String, required: true, unique: true },
     description: { type: String, default: '' },
+    descriptionAr: { type: String, default: '' },
     imageUrl: { type: String, default: '' },
     sortOrder: { type: Number, default: 0 },
     active: { type: Boolean, default: true },
@@ -53,10 +57,13 @@ export const Category = mongoose.model<ICategory>('Category', categorySchema);
 export interface ISubCategory extends Document {
   categoryId: Types.ObjectId;
   name: string;
+  nameAr?: string;
   slug: string;
   description: string;
+  descriptionAr?: string;
   imageUrl: string;
   tagline: string;
+  taglineAr?: string;
   sortOrder: number;
   active: boolean;
 }
@@ -65,10 +72,13 @@ const subCategorySchema = new Schema<ISubCategory>(
   {
     categoryId: { type: Schema.Types.ObjectId, ref: 'Category', required: true },
     name: { type: String, required: true },
+    nameAr: { type: String, default: '' },
     slug: { type: String, required: true },
     description: { type: String, default: '' },
+    descriptionAr: { type: String, default: '' },
     imageUrl: { type: String, default: '' },
     tagline: { type: String, default: '' },
+    taglineAr: { type: String, default: '' },
     sortOrder: { type: Number, default: 0 },
     active: { type: Boolean, default: true },
   },
@@ -81,7 +91,9 @@ export const SubCategory = mongoose.model<ISubCategory>('SubCategory', subCatego
 
 export interface IServiceStep {
   title: string;
+  titleAr?: string;
   description: string;
+  descriptionAr?: string;
   order: number;
 }
 
@@ -89,15 +101,24 @@ export interface ISubService extends Document {
   categoryId: Types.ObjectId;
   subCategoryId?: Types.ObjectId;
   name: string;
+  nameAr?: string;
   slug: string;
   description: string;
+  descriptionAr?: string;
   imageUrl: string;
   durationMinutes: number;
   optionGroup: string;
+  optionGroupAr?: string;
   optionGroupImage: string;
   sortOrder: number;
   youtubeUrl: string;
   steps: IServiceStep[];
+  /** Crossed-out compare-at price (AED); null when not discounted */
+  originalPriceAed?: number | null;
+  /** When true, clients may book multiple hours of this service */
+  pricedByHour?: boolean;
+  /** When true, clients may book multiple units (1×, 2×…) */
+  allowsQuantity?: boolean;
   active: boolean;
 }
 
@@ -106,21 +127,29 @@ const subServiceSchema = new Schema<ISubService>(
     categoryId: { type: Schema.Types.ObjectId, ref: 'Category', required: true },
     subCategoryId: { type: Schema.Types.ObjectId, ref: 'SubCategory' },
     name: { type: String, required: true },
+    nameAr: { type: String, default: '' },
     slug: { type: String, required: true },
     description: { type: String, default: '' },
+    descriptionAr: { type: String, default: '' },
     imageUrl: { type: String, default: '' },
     durationMinutes: { type: Number, default: 60 },
     optionGroup: { type: String, default: '' },
+    optionGroupAr: { type: String, default: '' },
     optionGroupImage: { type: String, default: '' },
     sortOrder: { type: Number, default: 0 },
     youtubeUrl: { type: String, default: '' },
     steps: [
       {
         title: String,
+        titleAr: String,
         description: String,
+        descriptionAr: String,
         order: Number,
       },
     ],
+    originalPriceAed: { type: Number, default: null },
+    pricedByHour: { type: Boolean, default: false },
+    allowsQuantity: { type: Boolean, default: false },
     active: { type: Boolean, default: true },
   },
   { timestamps: true }

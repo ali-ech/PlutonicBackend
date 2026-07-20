@@ -8,6 +8,9 @@ async function main() {
   if (!uri) throw new Error('MONGODB_URI required');
 
   const catalogMod = await import('../../client/src/lib/serviceCatalog.ts');
+  const detailsMod = await import('../../client/src/lib/variantServiceDetails.ts');
+  const svcDetailsMod = await import('../../client/src/lib/serviceDetails.ts');
+  const arMod = await import('../../client/src/i18n/catalogAr.ts');
   const items = catalogMod.flattenCatalog();
   const subCatDefs = catalogMod.flattenSubCategories();
 
@@ -23,12 +26,18 @@ async function main() {
     const catDef = catalogMod.SERVICE_CATALOG.find((c) => c.slug === slug);
     if (!catDef) continue;
 
+    const nameAr = arMod.resolveCategoryAr(slug, catDef.name);
+    const description = `Professional ${catDef.name.toLowerCase()} services.`;
+    const descriptionAr = `خدمات ${nameAr} احترافية.`;
+
     let cat = await Category.findOne({ slug });
     if (!cat) {
       cat = await Category.create({
         name: catDef.name,
+        nameAr,
         slug,
-        description: `Professional ${catDef.name.toLowerCase()} services.`,
+        description,
+        descriptionAr,
         imageUrl: categoryImageForSlug(slug) || '',
         sortOrder: categorySlugs.indexOf(slug) + 1,
         active: true,
@@ -36,6 +45,9 @@ async function main() {
       console.log(`Created category: ${cat.name}`);
     } else {
       cat.name = catDef.name;
+      cat.nameAr = nameAr;
+      cat.description = description;
+      cat.descriptionAr = descriptionAr;
       cat.imageUrl = categoryImageForSlug(slug) || cat.imageUrl;
       cat.active = true;
       cat.sortOrder = categorySlugs.indexOf(slug) + 1;
@@ -48,7 +60,9 @@ async function main() {
     { $set: { active: false } }
   );
   if (staleCategories.modifiedCount > 0) {
-    console.log(`Deactivated ${staleCategories.modifiedCount} obsolete categor${staleCategories.modifiedCount === 1 ? 'y' : 'ies'}.`);
+    console.log(
+      `Deactivated ${staleCategories.modifiedCount} obsolete categor${staleCategories.modifiedCount === 1 ? 'y' : 'ies'}.`
+    );
   }
 
   const subCatIdByKey = new Map<string, mongoose.Types.ObjectId>();
@@ -57,23 +71,34 @@ async function main() {
     const cat = await Category.findOne({ slug: def.categorySlug });
     if (!cat) continue;
 
+    const famAr = arMod.resolveFamilyAr(def.slug, def.name, def.tagline);
+    const description = `Professional ${def.name.toLowerCase()} services.`;
+    const descriptionAr = famAr.cardDesc || `خدمات ${famAr.name} احترافية.`;
+
     let subCat = await SubCategory.findOne({ categoryId: cat._id, slug: def.slug });
     if (!subCat) {
       subCat = await SubCategory.create({
         categoryId: cat._id,
         name: def.name,
+        nameAr: famAr.name,
         slug: def.slug,
-        description: `Professional ${def.name.toLowerCase()} services.`,
+        description,
+        descriptionAr,
         imageUrl: def.image,
         tagline: def.tagline || '',
+        taglineAr: famAr.tagline || '',
         sortOrder: def.sortOrder,
         active: true,
       });
       console.log(`Created sub-category: ${cat.slug} / ${subCat.name}`);
     } else {
       subCat.name = def.name;
+      subCat.nameAr = famAr.name;
+      subCat.description = description;
+      subCat.descriptionAr = descriptionAr;
       subCat.imageUrl = def.image;
       subCat.tagline = def.tagline || '';
+      subCat.taglineAr = famAr.tagline || '';
       subCat.sortOrder = def.sortOrder;
       subCat.active = true;
       await subCat.save();
@@ -103,25 +128,69 @@ async function main() {
     const imageUrl = catalogMod.getCatalogImageForSlug(item.slug) || '';
 
     let sub = await SubService.findOne({ categoryId: cat._id, slug: item.slug });
+    const familyDetails = svcDetailsMod.getServiceDetails(item.subCategorySlug, item.subCategoryName);
+    const description =
+      detailsMod.getJustlifeCardDescription(
+        item.slug,
+        item.name,
+        familyDetails.tagline || familyDetails.headline
+      ) || `Professional ${item.name}`;
+    const ar = arMod.resolveServiceAr(
+      item.slug,
+      item.name,
+      description,
+      item.subCategorySlug
+    );
+    const optionGroupAr = arMod.resolveOptionGroupAr(item.optionGroup || '');
+
+    const payload = {
+      name: item.name,
+      nameAr: ar.name,
+      description,
+      descriptionAr: ar.description,
+      optionGroup: item.optionGroup || '',
+      optionGroupAr,
+      optionGroupImage: item.optionGroupImage || '',
+      durationMinutes: item.durationMinutes,
+      sortOrder: item.sortOrder,
+      originalPriceAed: item.originalPriceAed ?? null,
+      pricedByHour: Boolean(item.pricedByHour),
+      allowsQuantity: Boolean(item.allowsQuantity),
+      subCategoryId: subCatId,
+      imageUrl: imageUrl || undefined,
+      active: true,
+      steps: [
+        {
+          title: 'Inspection',
+          titleAr: 'فحص',
+          description: 'We assess the area and requirements.',
+          descriptionAr: 'نقيّم المنطقة والمتطلبات.',
+          order: 1,
+        },
+        {
+          title: 'Service',
+          titleAr: 'تنفيذ الخدمة',
+          description: 'Our team performs the service using professional tools.',
+          descriptionAr: 'ينفّذ فريقنا الخدمة بأدوات احترافية.',
+          order: 2,
+        },
+        {
+          title: 'Final check',
+          titleAr: 'فحص نهائي',
+          description: 'Quality check and customer walkthrough.',
+          descriptionAr: 'فحص جودة وجولة مع العميل.',
+          order: 3,
+        },
+      ],
+    };
+
     if (!sub) {
       sub = await SubService.create({
         categoryId: cat._id,
-        subCategoryId: subCatId,
-        name: item.name,
         slug: item.slug,
-        description: `Professional ${item.name} — trained team, quality equipment.`,
-        imageUrl,
-        durationMinutes: item.durationMinutes,
-        optionGroup: item.optionGroup || '',
-        optionGroupImage: item.optionGroupImage || '',
-        sortOrder: item.sortOrder,
         youtubeUrl: '',
-        steps: [
-          { title: 'Inspection', description: 'We assess the area and requirements.', order: 1 },
-          { title: 'Service', description: 'Our team performs the service using professional tools.', order: 2 },
-          { title: 'Final check', description: 'Quality check and customer walkthrough.', order: 3 },
-        ],
-        active: true,
+        imageUrl: imageUrl || '',
+        ...payload,
       });
       created++;
 
@@ -134,14 +203,8 @@ async function main() {
         );
       }
     } else {
-      sub.name = item.name;
-      sub.subCategoryId = subCatId;
-      sub.durationMinutes = item.durationMinutes;
-      sub.imageUrl = imageUrl || sub.imageUrl;
-      sub.optionGroup = item.optionGroup || '';
-      sub.optionGroupImage = item.optionGroupImage || '';
-      sub.sortOrder = item.sortOrder;
-      sub.active = true;
+      Object.assign(sub, payload);
+      if (imageUrl) sub.imageUrl = imageUrl;
       await sub.save();
       updated++;
 

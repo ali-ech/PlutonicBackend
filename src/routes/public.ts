@@ -15,14 +15,30 @@ import { getGoogleBusinessLive } from '../services/googlePlaces.js';
 
 const router = Router();
 
+const EMIRATE_AR: Record<string, string> = {
+  dubai: 'دبي',
+  sharjah: 'الشارقة',
+  'abu dhabi': 'أبوظبي',
+  ajman: 'عجمان',
+  'umm al quwain': 'أم القيوين',
+  'ras al khaimah': 'رأس الخيمة',
+  fujairah: 'الفجيرة',
+  'al ain': 'العين',
+};
+
 router.get('/locations', async (_req, res) => {
   const emirates = await Emirate.find({ active: true }).sort({ name: 1 });
   const cities = await City.find().sort({ name: 1 });
   res.json({
-    emirates: emirates.map((e) => ({ _id: String(e._id), name: e.name })),
+    emirates: emirates.map((e) => ({
+      _id: String(e._id),
+      name: e.name,
+      nameAr: EMIRATE_AR[e.name.trim().toLowerCase()] || '',
+    })),
     cities: cities.map((c) => ({
       _id: String(c._id),
       name: c.name,
+      nameAr: '',
       emirateId: String(c.emirateId),
     })),
   });

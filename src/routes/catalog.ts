@@ -29,8 +29,10 @@ router.get('/with-prices', async (req, res) => {
       category: {
         _id: cat._id,
         name: cat.name,
+        nameAr: cat.nameAr || '',
         slug: cat.slug,
         description: cat.description,
+        descriptionAr: cat.descriptionAr || '',
         imageUrl: cat.imageUrl,
         sortOrder: cat.sortOrder,
       },
@@ -44,19 +46,25 @@ router.get('/with-prices', async (req, res) => {
           .map((s) => ({
             _id: s._id,
             name: s.name,
+            nameAr: s.nameAr || '',
             slug: s.slug,
             description: s.description,
+            descriptionAr: s.descriptionAr || '',
             imageUrl: s.imageUrl,
             durationMinutes: s.durationMinutes,
             optionGroup: s.optionGroup || '',
+            optionGroupAr: s.optionGroupAr || '',
             optionGroupImage: s.optionGroupImage || '',
             sortOrder: s.sortOrder,
             priceAed: priceMap.get(s._id.toString()) ?? null,
+            originalPriceAed: s.originalPriceAed ?? null,
+            pricedByHour: Boolean(s.pricedByHour),
+            allowsQuantity: Boolean(s.allowsQuantity),
           }));
 
         const groupMap = new Map<
           string,
-          { name: string; imageUrl: string; services: typeof services }
+          { name: string; nameAr: string; imageUrl: string; services: typeof services }
         >();
         const ungrouped: typeof services = [];
 
@@ -64,6 +72,7 @@ router.get('/with-prices', async (req, res) => {
           if (svc.optionGroup) {
             const g = groupMap.get(svc.optionGroup) ?? {
               name: svc.optionGroup,
+              nameAr: svc.optionGroupAr || '',
               imageUrl: svc.optionGroupImage || sc.imageUrl,
               services: [],
             };
@@ -80,10 +89,13 @@ router.get('/with-prices', async (req, res) => {
           subCategory: {
             _id: sc._id,
             name: sc.name,
+            nameAr: sc.nameAr || '',
             slug: sc.slug,
             description: sc.description,
+            descriptionAr: sc.descriptionAr || '',
             imageUrl: sc.imageUrl,
             tagline: sc.tagline,
+            taglineAr: sc.taglineAr || '',
             sortOrder: sc.sortOrder,
           },
           optionGroups,
