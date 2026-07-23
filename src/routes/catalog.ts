@@ -64,7 +64,13 @@ router.get('/with-prices', async (req, res) => {
 
         const groupMap = new Map<
           string,
-          { name: string; nameAr: string; imageUrl: string; services: typeof services }
+          {
+            name: string;
+            nameAr: string;
+            imageUrl: string;
+            services: typeof services;
+            sortOrder: number;
+          }
         >();
         const ungrouped: typeof services = [];
 
@@ -75,15 +81,20 @@ router.get('/with-prices', async (req, res) => {
               nameAr: svc.optionGroupAr || '',
               imageUrl: svc.optionGroupImage || sc.imageUrl,
               services: [],
+              sortOrder: svc.sortOrder,
             };
             g.services.push(svc);
+            g.sortOrder = Math.min(g.sortOrder, svc.sortOrder);
             groupMap.set(svc.optionGroup, g);
           } else {
             ungrouped.push(svc);
           }
         }
 
-        const optionGroups = [...groupMap.values()].sort((a, b) => a.name.localeCompare(b.name));
+        // Catalog order (Lite before Intense, External before External+Internal), not A–Z
+        const optionGroups = [...groupMap.values()]
+          .sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name))
+          .map(({ sortOrder: _sortOrder, ...group }) => group);
 
         return {
           subCategory: {
